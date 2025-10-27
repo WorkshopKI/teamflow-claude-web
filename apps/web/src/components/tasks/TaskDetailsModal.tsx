@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { Task, TaskPriority, TaskStatus, AIPersona } from '@teamflow/types';
 import { useTasks } from '@/hooks/useTasks';
 import { usePersonas } from '@/hooks/usePersonas';
+import { useProjects } from '@/hooks/useProjects';
 import { useActivities } from '@/hooks/useActivities';
 import { useAgentExecution } from '@/hooks/useAgentExecution';
 import { formatRelativeTime } from '@teamflow/core';
@@ -24,6 +25,7 @@ type TabType = 'details' | 'comments' | 'activity';
 export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProps) {
   const { update, remove } = useTasks();
   const { personas } = usePersonas();
+  const { projects } = useProjects();
   const { createActivity } = useActivities();
   const { execute: executeAgent, isExecuting, executionError } = useAgentExecution();
   const [activeTab, setActiveTab] = useState<TabType>('details');
@@ -38,6 +40,7 @@ export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProp
     priority: task.priority,
     status: task.status,
     assignee: task.assignee || '',
+    project: task.project,
     tags: task.tags.join(', '),
   });
 
@@ -55,6 +58,7 @@ export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProp
       priority: editedTask.priority,
       status: editedTask.status,
       assignee: editedTask.assignee || null,
+      project: editedTask.project,
       tags: editedTask.tags
         .split(',')
         .map((t) => t.trim())
@@ -88,6 +92,14 @@ export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProp
       });
     }
 
+    if (oldTask.project !== updates.project) {
+      createActivity('task_updated', task.id, currentUserId, {
+        field: 'project',
+        oldValue: oldTask.project,
+        newValue: updates.project,
+      });
+    }
+
     setIsEditing(false);
   };
 
@@ -104,6 +116,7 @@ export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProp
       priority: task.priority,
       status: task.status,
       assignee: task.assignee || '',
+      project: task.project,
       tags: task.tags.join(', '),
     });
     setIsEditing(false);
@@ -305,6 +318,28 @@ export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProp
                 ) : (
                   <div className="px-3 py-2 bg-secondary rounded-lg text-muted-foreground">
                     Unassigned
+                  </div>
+                )}
+              </div>
+
+              {/* Project */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Project</label>
+                {isEditing ? (
+                  <select
+                    value={editedTask.project}
+                    onChange={(e) => setEditedTask({ ...editedTask, project: e.target.value })}
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    {projects.map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="px-3 py-2 bg-secondary rounded-lg">
+                    {projects.find((p) => p.id === task.project)?.name || 'Unknown Project'}
                   </div>
                 )}
               </div>

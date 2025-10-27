@@ -2,10 +2,12 @@
  * TeamFlow AI - Workflow Engine Package
  *
  * Visual workflow automation engine inspired by Node-RED and n8n.
- * This is a stub implementation - full implementation coming soon.
  */
 
 import type { Workflow, WorkflowExecution, ExecutionStatus } from '@teamflow/types';
+
+// Export the executor
+export * from './executor';
 
 /**
  * Workflow engine interface

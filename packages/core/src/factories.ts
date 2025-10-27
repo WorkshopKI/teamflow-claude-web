@@ -183,14 +183,115 @@ export function createWorkflow(
  * Creates a new workflow node
  */
 export function createWorkflowNode(
-  partial: Partial<WorkflowNode> & Pick<WorkflowNode, 'type'>
+  partial: Partial<WorkflowNode> & Pick<WorkflowNode, 'type'> & { position: { x: number; y: number } }
 ): WorkflowNode {
+  const nodeConfig = getNodeTypeConfig(partial.type as any);
+
   return {
     id: nanoid(),
-    position: { x: 0, y: 0 },
-    data: {},
-    ...partial,
+    type: partial.type,
+    position: partial.position || { x: 0, y: 0 },
+    data: {
+      label: partial.data?.label || nodeConfig.defaultLabel,
+      ...nodeConfig.defaultData,
+      ...partial.data,
+    },
+    inputs: nodeConfig.inputs,
+    outputs: nodeConfig.outputs,
   };
+}
+
+interface NodeTypeConfig {
+  defaultLabel: string;
+  defaultData: Record<string, any>;
+  inputs: Array<{ id: string; name: string; type: string }>;
+  outputs: Array<{ id: string; name: string; type: string }>;
+}
+
+function getNodeTypeConfig(type: string): NodeTypeConfig {
+  const configs: Record<string, NodeTypeConfig> = {
+    trigger: {
+      defaultLabel: 'Trigger',
+      defaultData: {
+        triggerType: 'manual',
+        description: 'Start workflow manually',
+      },
+      inputs: [],
+      outputs: [{ id: 'output', name: 'Flow', type: 'flow' }],
+    },
+    action: {
+      defaultLabel: 'Action',
+      defaultData: {
+        actionType: 'custom',
+        description: 'Perform an action',
+      },
+      inputs: [{ id: 'input', name: 'Flow', type: 'flow' }],
+      outputs: [{ id: 'output', name: 'Flow', type: 'flow' }],
+    },
+    condition: {
+      defaultLabel: 'Condition',
+      defaultData: {
+        operator: 'equals',
+        leftValue: '',
+        rightValue: '',
+      },
+      inputs: [{ id: 'input', name: 'Flow', type: 'flow' }],
+      outputs: [
+        { id: 'true', name: 'True', type: 'flow' },
+        { id: 'false', name: 'False', type: 'flow' },
+      ],
+    },
+    'ai-agent': {
+      defaultLabel: 'AI Agent',
+      defaultData: {
+        agentId: '',
+        instruction: 'Execute task with AI agent',
+        outputVariable: 'agentResult',
+      },
+      inputs: [{ id: 'input', name: 'Flow', type: 'flow' }],
+      outputs: [
+        { id: 'success', name: 'Success', type: 'flow' },
+        { id: 'error', name: 'Error', type: 'flow' },
+      ],
+    },
+    task: {
+      defaultLabel: 'Create Task',
+      defaultData: {
+        taskTitle: '',
+        taskDescription: '',
+        priority: 'medium',
+        assigneeId: '',
+        projectId: '',
+      },
+      inputs: [{ id: 'input', name: 'Flow', type: 'flow' }],
+      outputs: [{ id: 'output', name: 'Flow', type: 'flow' }],
+    },
+    delay: {
+      defaultLabel: 'Delay',
+      defaultData: {
+        duration: 1000,
+        unit: 'seconds',
+      },
+      inputs: [{ id: 'input', name: 'Flow', type: 'flow' }],
+      outputs: [{ id: 'output', name: 'Flow', type: 'flow' }],
+    },
+    webhook: {
+      defaultLabel: 'Webhook',
+      defaultData: {
+        url: '',
+        method: 'POST',
+        headers: {},
+        body: {},
+      },
+      inputs: [{ id: 'input', name: 'Flow', type: 'flow' }],
+      outputs: [
+        { id: 'success', name: 'Success', type: 'flow' },
+        { id: 'error', name: 'Error', type: 'flow' },
+      ],
+    },
+  };
+
+  return configs[type] || configs.action;
 }
 
 /**
@@ -202,5 +303,63 @@ export function createWorkflowEdge(
   return {
     id: nanoid(),
     ...partial,
+  };
+}
+
+// ============================================================================
+// Workflow Node Types & Utilities
+// ============================================================================
+
+export type NodeType = 'trigger' | 'action' | 'condition' | 'ai-agent' | 'task' | 'delay' | 'webhook';
+
+export function getNodeTypes(): Array<{ type: NodeType; label: string; icon: string; category: string }> {
+  return [
+    { type: 'trigger', label: 'Trigger', icon: '⚡', category: 'Flow' },
+    { type: 'action', label: 'Action', icon: '⚙️', category: 'Flow' },
+    { type: 'condition', label: 'Condition', icon: '❓', category: 'Flow' },
+    { type: 'ai-agent', label: 'AI Agent', icon: '🤖', category: 'AI' },
+    { type: 'task', label: 'Create Task', icon: '📋', category: 'Tasks' },
+    { type: 'delay', label: 'Delay', icon: '⏱️', category: 'Utility' },
+    { type: 'webhook', label: 'Webhook', icon: '🔗', category: 'Integration' },
+  ];
+}
+
+export function getNodeTypeByType(type: NodeType): { type: NodeType; label: string; icon: string; category: string } | undefined {
+  return getNodeTypes().find(nt => nt.type === type);
+}
+
+// ============================================================================
+// Workflow Execution
+// ============================================================================
+
+import type { WorkflowExecution, PersonaId, WorkflowId } from '@teamflow/types';
+
+export interface CreateExecutionInput {
+  workflowId: WorkflowId;
+  triggeredBy: PersonaId | 'system';
+  context?: {
+    variables?: Record<string, any>;
+    nodeResults?: Record<string, any>;
+    currentNodeId?: string | null;
+  };
+}
+
+export function createWorkflowExecution(input: CreateExecutionInput): WorkflowExecution {
+  const now = new Date();
+
+  return {
+    id: nanoid(),
+    workflowId: input.workflowId,
+    status: 'pending',
+    triggeredBy: input.triggeredBy,
+    startedAt: now,
+    completedAt: null,
+    duration: null,
+    context: {
+      variables: input.context?.variables || {},
+      nodeResults: input.context?.nodeResults || {},
+      currentNodeId: input.context?.currentNodeId || null,
+    },
+    logs: [],
   };
 }
