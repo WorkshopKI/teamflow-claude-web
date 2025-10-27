@@ -64,6 +64,32 @@ export interface Comment {
   mentions: PersonaId[];
 }
 
+export type ActivityType =
+  | 'task_created'
+  | 'task_updated'
+  | 'task_deleted'
+  | 'status_changed'
+  | 'priority_changed'
+  | 'assignee_changed'
+  | 'comment_added'
+  | 'attachment_added'
+  | 'tags_changed'
+  | 'due_date_changed';
+
+export interface Activity {
+  id: string;
+  type: ActivityType;
+  taskId: TaskId;
+  actor: PersonaId;
+  timestamp: Timestamp;
+  changes?: {
+    field: string;
+    oldValue: any;
+    newValue: any;
+  };
+  metadata?: Record<string, any>;
+}
+
 // ============================================================================
 // Project Management
 // ============================================================================

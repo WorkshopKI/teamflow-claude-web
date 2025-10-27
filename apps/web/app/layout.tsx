@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { DatabaseProvider } from '@/providers/DatabaseProvider';
+import { Navigation } from '@/components/Navigation';
 
 export const metadata: Metadata = {
   title: 'TeamFlow AI - Local-First Collaborative Platform',
@@ -22,9 +24,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="font-sans antialiased">
-        <div id="app-root" className="min-h-screen bg-background">
-          {children}
-        </div>
+        <DatabaseProvider>
+          <div id="app-root" className="min-h-screen bg-background">
+            <Navigation />
+            {children}
+          </div>
+        </DatabaseProvider>
       </body>
     </html>
   );
