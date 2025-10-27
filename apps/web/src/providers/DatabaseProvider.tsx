@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Database } from '@teamflow/database';
 import { initDatabase } from '@teamflow/database';
+import { ALL_DEFAULT_PERSONAS, shouldSeedDefaultPersonas } from '@/lib/defaultPersonas';
 
 interface DatabaseContextValue {
   db: Database | null;
@@ -29,6 +30,16 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
       try {
         console.log('Initializing database...');
         database = await initDatabase('teamflow-db');
+
+        // Seed default personas if this is a fresh database
+        const existingPersonas = database.personas.getAll();
+        if (shouldSeedDefaultPersonas(existingPersonas)) {
+          console.log('Seeding default personas...');
+          for (const persona of ALL_DEFAULT_PERSONAS) {
+            database.personas.create(persona);
+          }
+          console.log(`Seeded ${ALL_DEFAULT_PERSONAS.length} default personas`);
+        }
 
         if (mounted) {
           setDb(database);

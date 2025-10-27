@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { Task, TaskPriority, TaskStatus } from '@teamflow/types';
 import { useTasks } from '@/hooks/useTasks';
+import { usePersonas } from '@/hooks/usePersonas';
 import { formatRelativeTime } from '@teamflow/core';
 
 interface TaskDetailsModalProps {
@@ -16,6 +17,7 @@ const PRIORITIES: TaskPriority[] = ['low', 'medium', 'high', 'urgent'];
 
 export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProps) {
   const { update, remove } = useTasks();
+  const { personas } = usePersonas();
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -24,6 +26,7 @@ export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProp
     description: task.description,
     priority: task.priority,
     status: task.status,
+    assignee: task.assignee || '',
     tags: task.tags.join(', '),
   });
 
@@ -35,6 +38,7 @@ export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProp
       description: editedTask.description.trim(),
       priority: editedTask.priority,
       status: editedTask.status,
+      assignee: editedTask.assignee || null,
       tags: editedTask.tags
         .split(',')
         .map((t) => t.trim())
@@ -54,10 +58,13 @@ export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProp
       description: task.description,
       priority: task.priority,
       status: task.status,
+      assignee: task.assignee || '',
       tags: task.tags.join(', '),
     });
     setIsEditing(false);
   };
+
+  const assignedPersona = personas.find((p) => p.id === task.assignee);
 
   return (
     <div
@@ -165,6 +172,37 @@ export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProp
                 <div className="px-3 py-2 bg-secondary rounded-lg capitalize">{task.priority}</div>
               )}
             </div>
+          </div>
+
+          {/* Assignee */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Assignee</label>
+            {isEditing ? (
+              <select
+                value={editedTask.assignee}
+                onChange={(e) => setEditedTask({ ...editedTask, assignee: e.target.value })}
+                className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">Unassigned</option>
+                {personas.map((persona) => (
+                  <option key={persona.id} value={persona.id}>
+                    {persona.type === 'ai' ? '🤖 ' : '👤 '}
+                    {persona.name} - {persona.role}
+                  </option>
+                ))}
+              </select>
+            ) : assignedPersona ? (
+              <div className="px-3 py-2 bg-secondary rounded-lg flex items-center gap-2">
+                <span>{assignedPersona.type === 'ai' ? '🤖' : '👤'}</span>
+                <span>
+                  {assignedPersona.name} ({assignedPersona.role})
+                </span>
+              </div>
+            ) : (
+              <div className="px-3 py-2 bg-secondary rounded-lg text-muted-foreground">
+                Unassigned
+              </div>
+            )}
           </div>
 
           {/* Tags */}
