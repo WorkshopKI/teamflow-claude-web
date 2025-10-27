@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import type { Task, TaskPriority, TaskStatus } from '@teamflow/types';
+import type { Task, TaskPriority, TaskStatus, AIPersona } from '@teamflow/types';
 import { useTasks } from '@/hooks/useTasks';
 import { usePersonas } from '@/hooks/usePersonas';
 import { useActivities } from '@/hooks/useActivities';
+import { useAgentExecution } from '@/hooks/useAgentExecution';
 import { formatRelativeTime } from '@teamflow/core';
 import { TaskComments } from './TaskComments';
 import { ActivityFeed } from './ActivityFeed';
@@ -24,9 +25,12 @@ export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProp
   const { update, remove } = useTasks();
   const { personas } = usePersonas();
   const { createActivity } = useActivities();
+  const { execute: executeAgent, isExecuting, executionError } = useAgentExecution();
   const [activeTab, setActiveTab] = useState<TabType>('details');
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showExecutionResult, setShowExecutionResult] = useState(false);
+  const [executionResult, setExecutionResult] = useState<string | null>(null);
 
   const [editedTask, setEditedTask] = useState({
     title: task.title,
@@ -103,6 +107,26 @@ export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProp
       tags: task.tags.join(', '),
     });
     setIsEditing(false);
+  };
+
+  const handleExecuteAgent = async () => {
+    if (!assignedPersona || assignedPersona.type !== 'ai') return;
+
+    setShowExecutionResult(false);
+    const result = await executeAgent(task, assignedPersona as AIPersona);
+
+    if (result) {
+      const message = result.success
+        ? `✅ Agent executed successfully!\n\n${result.toolsUsed.length} tool(s) used.`
+        : `❌ Execution failed: ${result.error || result.message}`;
+      setExecutionResult(message);
+      setShowExecutionResult(true);
+
+      // Switch to activity/comments tab to see results
+      if (result.success && result.toolsUsed.length > 0) {
+        setActiveTab('activity');
+      }
+    }
   };
 
   const assignedPersona = personas.find((p) => p.id === task.assignee);
@@ -326,6 +350,40 @@ export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProp
           {activeTab === 'activity' && <ActivityFeed taskId={task.id} />}
         </div>
 
+        {/* Execution Result */}
+        {showExecutionResult && executionResult && (
+          <div className="border-t border-border p-4 bg-secondary/20">
+            <div className="flex items-start gap-2">
+              <svg className="w-5 h-5 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="flex-1">
+                <p className="text-sm whitespace-pre-wrap">{executionResult}</p>
+              </div>
+              <button
+                onClick={() => setShowExecutionResult(false)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Execution Error */}
+        {executionError && (
+          <div className="border-t border-border p-4 bg-destructive/10">
+            <div className="flex items-start gap-2">
+              <svg className="w-5 h-5 mt-0.5 shrink-0 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm text-destructive">{executionError}</p>
+            </div>
+          </div>
+        )}
+
         {/* Footer Actions */}
         <div className="border-t border-border p-6 flex items-center justify-between shrink-0">
           <div>
@@ -379,6 +437,28 @@ export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProp
                 >
                   Close
                 </button>
+                {assignedPersona && assignedPersona.type === 'ai' && (
+                  <button
+                    onClick={handleExecuteAgent}
+                    disabled={isExecuting}
+                    className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    title="Execute task with AI agent"
+                  >
+                    {isExecuting ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Executing...
+                      </>
+                    ) : (
+                      <>
+                        🤖 Execute with AI
+                      </>
+                    )}
+                  </button>
+                )}
                 {activeTab === 'details' && (
                   <button
                     onClick={() => setIsEditing(true)}
