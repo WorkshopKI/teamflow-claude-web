@@ -157,7 +157,12 @@ export function deepClone<T>(obj: T): T {
 export function deepMerge<T extends Record<string, any>>(target: T, source: Partial<T>): T {
   const output = { ...target };
   for (const key in source) {
-    if (source[key] instanceof Object && key in target) {
+    if (
+      source[key] !== null &&
+      typeof source[key] === 'object' &&
+      !Array.isArray(source[key]) &&
+      key in target
+    ) {
       output[key] = deepMerge(target[key], source[key] as any);
     } else {
       output[key] = source[key] as any;
