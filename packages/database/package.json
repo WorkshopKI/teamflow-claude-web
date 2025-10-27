@@ -1,0 +1,29 @@
+{
+  "name": "@teamflow/database",
+  "version": "0.1.0",
+  "description": "Local-first database layer with CRDT support for TeamFlow AI",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@teamflow/types": "*",
+    "dexie": "^3.2.4",
+    "yjs": "^13.6.11",
+    "y-indexeddb": "^9.0.12"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3"
+  }
+}

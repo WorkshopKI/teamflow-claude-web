@@ -1,0 +1,43 @@
+{
+  "name": "teamflow-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local-first collaborative platform where humans and AI agents work together",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=apps/web",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules apps/*/.next apps/*/dist packages/*/dist",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "type-check": "npm run type-check --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "prettier": "^3.2.4",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "keywords": [
+    "collaboration",
+    "local-first",
+    "ai-agents",
+    "workflow-automation",
+    "task-management",
+    "crdt",
+    "p2p"
+  ],
+  "author": "TeamFlow AI Contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/WorkshopKI/teamflow-claude-web.git"
+  }
+}

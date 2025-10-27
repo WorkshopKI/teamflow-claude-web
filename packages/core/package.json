@@ -1,0 +1,27 @@
+{
+  "name": "@teamflow/core",
+  "version": "0.1.0",
+  "description": "Core business logic for TeamFlow AI",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@teamflow/types": "*",
+    "nanoid": "^5.0.4",
+    "date-fns": "^3.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

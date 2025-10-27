@@ -1,0 +1,44 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "checkJs": false,
+    "jsx": "preserve",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "removeComments": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "isolatedModules": true,
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@teamflow/core": ["./packages/core/src"],
+      "@teamflow/types": ["./packages/types/src"],
+      "@teamflow/database": ["./packages/database/src"],
+      "@teamflow/workflow-engine": ["./packages/workflow-engine/src"],
+      "@teamflow/ai-agents": ["./packages/ai-agents/src"],
+      "@teamflow/p2p": ["./packages/p2p/src"],
+      "@teamflow/ui": ["./packages/ui/src"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", "dist", ".next", "out"]
+}
