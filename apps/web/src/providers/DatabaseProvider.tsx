@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import type { Database } from '@teamflow/database';
 import { initDatabase } from '@teamflow/database';
 import { ALL_DEFAULT_PERSONAS, shouldSeedDefaultPersonas } from '@/lib/defaultPersonas';
+import { DEFAULT_PROJECT, shouldSeedDefaultProject } from '@/lib/defaultProjects';
 
 interface DatabaseContextValue {
   db: Database | null;
@@ -39,6 +40,14 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
             database.personas.create(persona);
           }
           console.log(`Seeded ${ALL_DEFAULT_PERSONAS.length} default personas`);
+        }
+
+        // Seed default project if this is a fresh database
+        const existingProjects = database.projects.getAll();
+        if (shouldSeedDefaultProject(existingProjects)) {
+          console.log('Seeding default project...');
+          database.projects.create(DEFAULT_PROJECT);
+          console.log('Seeded default "General" project');
         }
 
         if (mounted) {
