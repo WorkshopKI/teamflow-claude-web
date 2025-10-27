@@ -1,0 +1,271 @@
+'use client';
+
+import { useState } from 'react';
+import type { Task, TaskPriority, TaskStatus } from '@teamflow/types';
+import { useTasks } from '@/hooks/useTasks';
+import { formatRelativeTime } from '@teamflow/core';
+
+interface TaskDetailsModalProps {
+  task: Task;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const STATUSES: TaskStatus[] = ['todo', 'in_progress', 'done', 'blocked', 'cancelled'];
+const PRIORITIES: TaskPriority[] = ['low', 'medium', 'high', 'urgent'];
+
+export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProps) {
+  const { update, remove } = useTasks();
+  const [isEditing, setIsEditing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const [editedTask, setEditedTask] = useState({
+    title: task.title,
+    description: task.description,
+    priority: task.priority,
+    status: task.status,
+    tags: task.tags.join(', '),
+  });
+
+  if (!isOpen) return null;
+
+  const handleSave = () => {
+    update(task.id, {
+      title: editedTask.title.trim(),
+      description: editedTask.description.trim(),
+      priority: editedTask.priority,
+      status: editedTask.status,
+      tags: editedTask.tags
+        .split(',')
+        .map((t) => t.trim())
+        .filter((t) => t.length > 0),
+    });
+    setIsEditing(false);
+  };
+
+  const handleDelete = () => {
+    remove(task.id);
+    onClose();
+  };
+
+  const handleCancel = () => {
+    setEditedTask({
+      title: task.title,
+      description: task.description,
+      priority: task.priority,
+      status: task.status,
+      tags: task.tags.join(', '),
+    });
+    setIsEditing(false);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-card border border-border rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="border-b border-border p-6 flex items-center justify-between">
+          <h2 className="text-2xl font-bold">Task Details</h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-secondary rounded-lg transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-6">
+          {/* Title */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Title</label>
+            {isEditing ? (
+              <input
+                type="text"
+                value={editedTask.title}
+                onChange={(e) => setEditedTask({ ...editedTask, title: e.target.value })}
+                className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            ) : (
+              <h3 className="text-xl font-semibold">{task.title}</h3>
+            )}
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Description</label>
+            {isEditing ? (
+              <textarea
+                value={editedTask.description}
+                onChange={(e) => setEditedTask({ ...editedTask, description: e.target.value })}
+                className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary min-h-[120px]"
+                placeholder="Add a description..."
+              />
+            ) : (
+              <p className="text-muted-foreground">
+                {task.description || 'No description provided'}
+              </p>
+            )}
+          </div>
+
+          {/* Status & Priority */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Status</label>
+              {isEditing ? (
+                <select
+                  value={editedTask.status}
+                  onChange={(e) =>
+                    setEditedTask({ ...editedTask, status: e.target.value as TaskStatus })
+                  }
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  {STATUSES.map((status) => (
+                    <option key={status} value={status}>
+                      {status.replace('_', ' ').toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="px-3 py-2 bg-secondary rounded-lg capitalize">
+                  {task.status.replace('_', ' ')}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Priority</label>
+              {isEditing ? (
+                <select
+                  value={editedTask.priority}
+                  onChange={(e) =>
+                    setEditedTask({ ...editedTask, priority: e.target.value as TaskPriority })
+                  }
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  {PRIORITIES.map((priority) => (
+                    <option key={priority} value={priority}>
+                      {priority.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="px-3 py-2 bg-secondary rounded-lg capitalize">{task.priority}</div>
+              )}
+            </div>
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Tags</label>
+            {isEditing ? (
+              <input
+                type="text"
+                value={editedTask.tags}
+                onChange={(e) => setEditedTask({ ...editedTask, tags: e.target.value })}
+                className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="tag1, tag2, tag3"
+              />
+            ) : task.tags.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {task.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-sm"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">No tags</p>
+            )}
+          </div>
+
+          {/* Metadata */}
+          <div className="pt-4 border-t border-border text-sm text-muted-foreground space-y-2">
+            <p>Created {formatRelativeTime(task.createdAt)}</p>
+            <p>Last updated {formatRelativeTime(task.updatedAt)}</p>
+            <p>ID: {task.id}</p>
+          </div>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="border-t border-border p-6 flex items-center justify-between">
+          <div>
+            {isDeleting ? (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Delete this task?</span>
+                <button
+                  onClick={handleDelete}
+                  className="px-3 py-1.5 bg-destructive text-destructive-foreground rounded-lg hover:opacity-90 transition-opacity text-sm font-medium"
+                >
+                  Confirm Delete
+                </button>
+                <button
+                  onClick={() => setIsDeleting(false)}
+                  className="px-3 py-1.5 border border-border rounded-lg hover:bg-secondary transition-colors text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setIsDeleting(true)}
+                className="px-4 py-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors font-medium"
+              >
+                Delete Task
+              </button>
+            )}
+          </div>
+
+          <div className="flex gap-2">
+            {isEditing ? (
+              <>
+                <button
+                  onClick={handleCancel}
+                  className="px-4 py-2 border border-border rounded-lg hover:bg-secondary transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity font-medium"
+                >
+                  Save Changes
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2 border border-border rounded-lg hover:bg-secondary transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity font-medium"
+                >
+                  Edit Task
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
