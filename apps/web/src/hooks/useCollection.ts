@@ -8,7 +8,7 @@ import type { DatabaseCollection } from '@teamflow/database';
  * Hook to subscribe to a database collection
  */
 export function useCollection<T extends { id: string }>(
-  collectionName: 'tasks' | 'projects' | 'personas' | 'teams' | 'workflows'
+  collectionName: 'tasks' | 'projects' | 'personas' | 'teams' | 'workflows' | 'activities'
 ) {
   const { db, isLoading: dbLoading } = useDatabase();
   const [items, setItems] = useState<T[]>([]);

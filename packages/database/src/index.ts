@@ -6,7 +6,7 @@
 
 import * as Y from 'yjs';
 import { IndexeddbPersistence } from 'y-indexeddb';
-import type { Task, Project, Persona, Team, Workflow } from '@teamflow/types';
+import type { Task, Project, Persona, Team, Workflow, Activity } from '@teamflow/types';
 
 /**
  * Database event listener
@@ -35,6 +35,7 @@ export interface Database {
   personas: DatabaseCollection<Persona>;
   teams: DatabaseCollection<Team>;
   workflows: DatabaseCollection<Workflow>;
+  activities: DatabaseCollection<Activity>;
   destroy(): void;
 }
 
@@ -134,6 +135,7 @@ export async function initDatabase(dbName: string = 'teamflow-db'): Promise<Data
     personas: createCollection<Persona>(doc, 'personas'),
     teams: createCollection<Team>(doc, 'teams'),
     workflows: createCollection<Workflow>(doc, 'workflows'),
+    activities: createCollection<Activity>(doc, 'activities'),
 
     destroy() {
       persistence.destroy();

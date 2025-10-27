@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, forwardRef } from 'react';
 import { createTask } from '@teamflow/core';
 import { useTasks } from '@/hooks/useTasks';
 import type { TaskPriority } from '@teamflow/types';
 
-export function TaskCreateButton() {
+export const TaskCreateButton = forwardRef<HTMLButtonElement>(function TaskCreateButton(_props, ref) {
   const { create } = useTasks();
   const [isOpen, setIsOpen] = useState(false);
   const [title, setTitle] = useState('');
@@ -37,6 +37,7 @@ export function TaskCreateButton() {
   if (!isOpen) {
     return (
       <button
+        ref={ref}
         onClick={() => setIsOpen(true)}
         className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity font-medium"
       >
@@ -111,4 +112,4 @@ export function TaskCreateButton() {
       </div>
     </div>
   );
-}
+});
