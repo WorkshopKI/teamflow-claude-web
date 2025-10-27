@@ -1,8 +1,20 @@
 'use client';
 
 import { useState } from 'react';
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+} from '@dnd-kit/core';
 import type { Task, TaskStatus } from '@teamflow/types';
 import { TaskCard } from './TaskCard';
+import { DroppableColumn } from './DroppableColumn';
+import { DraggableTaskCard } from './DraggableTaskCard';
 import { TaskDetailsModal } from './TaskDetailsModal';
 import { useTasks } from '@/hooks/useTasks';
 
@@ -20,54 +32,98 @@ const STATUSES: { value: TaskStatus; label: string; color: string }[] = [
 export function TaskBoard({ tasks }: TaskBoardProps) {
   const { update } = useTasks();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
 
-  const handleStatusChange = (taskId: string, newStatus: TaskStatus) => {
-    update(taskId, { status: newStatus });
+  // Configure sensors for drag detection
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 8px movement required to start drag
+      },
+    })
+  );
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const task = tasks.find((t) => t.id === event.active.id);
+    setActiveTask(task || null);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over) {
+      setActiveTask(null);
+      return;
+    }
+
+    // Get the task being dragged and the column it's dropped into
+    const taskId = active.id as string;
+    const newStatus = over.id as TaskStatus;
+
+    // Update task status if it changed
+    const task = tasks.find((t) => t.id === taskId);
+    if (task && task.status !== newStatus) {
+      update(taskId, { status: newStatus });
+    }
+
+    setActiveTask(null);
   };
 
   const handleTaskClick = (task: Task) => {
-    setSelectedTask(task);
+    if (!activeTask) {
+      // Only open modal if not dragging
+      setSelectedTask(task);
+    }
   };
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {STATUSES.map((status) => {
-          const columnTasks = tasks.filter((task) => task.status === status.value);
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {STATUSES.map((status) => {
+            const columnTasks = tasks.filter((task) => task.status === status.value);
 
-          return (
-            <div key={status.value} className="flex flex-col">
-              {/* Column Header */}
-              <div className="mb-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className={`w-3 h-3 rounded-full ${status.color}`} />
-                  <h2 className="font-semibold text-lg">{status.label}</h2>
-                  <span className="text-sm text-muted-foreground">({columnTasks.length})</span>
-                </div>
-                <div className="h-1 bg-border rounded-full" />
-              </div>
-
-              {/* Column Content */}
-              <div className="flex-1 space-y-3">
+            return (
+              <DroppableColumn
+                key={status.value}
+                id={status.value}
+                title={status.label}
+                color={status.color}
+                count={columnTasks.length}
+              >
                 {columnTasks.length === 0 ? (
                   <div className="text-center py-8 px-4 border-2 border-dashed border-border rounded-lg">
                     <p className="text-sm text-muted-foreground">No tasks</p>
+                    <p className="text-xs text-muted-foreground mt-1">Drag tasks here</p>
                   </div>
                 ) : (
                   columnTasks.map((task) => (
-                    <div key={task.id} onClick={() => handleTaskClick(task)}>
-                      <TaskCard
-                        task={task}
-                        onStatusChange={(newStatus) => handleStatusChange(task.id, newStatus)}
-                      />
-                    </div>
+                    <DraggableTaskCard
+                      key={task.id}
+                      task={task}
+                      onClick={() => handleTaskClick(task)}
+                    />
                   ))
                 )}
-              </div>
+              </DroppableColumn>
+            );
+          })}
+        </div>
+
+        {/* Drag Overlay - shows a copy of the card being dragged */}
+        <DragOverlay>
+          {activeTask ? (
+            <div className="rotate-3 cursor-grabbing opacity-80">
+              <TaskCard task={activeTask} />
             </div>
-          );
-        })}
-      </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
 
       {/* Task Details Modal */}
       {selectedTask && (
