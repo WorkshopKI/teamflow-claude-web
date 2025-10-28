@@ -264,6 +264,10 @@ export function createCalendarPlugin(): Plugin {
               duration,
             },
             searchedDays: searchDays,
+            workingHours: {
+              start: workingHoursStart || 9,
+              end: workingHoursEnd || 17,
+            },
           };
         });
     })

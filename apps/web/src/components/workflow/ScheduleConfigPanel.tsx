@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import type { Workflow } from '@teamflow/types';
 import { formatNextRun, isValidPattern } from '@teamflow/workflow-engine/src/scheduler';
 
 interface ScheduleConfig {
@@ -11,7 +10,6 @@ interface ScheduleConfig {
 }
 
 interface ScheduleConfigPanelProps {
-  workflow: Workflow;
   schedule?: ScheduleConfig;
   onScheduleChange: (schedule: ScheduleConfig | null) => void;
 }
@@ -29,7 +27,7 @@ const COMMON_PATTERNS = [
   { label: 'Every week', value: '7d' },
 ];
 
-export function ScheduleConfigPanel({ workflow, schedule, onScheduleChange }: ScheduleConfigPanelProps) {
+export function ScheduleConfigPanel({ schedule, onScheduleChange }: ScheduleConfigPanelProps) {
   const [enabled, setEnabled] = useState(schedule?.enabled || false);
   const [pattern, setPattern] = useState(schedule?.pattern || '1h');
   const [customPattern, setCustomPattern] = useState('');

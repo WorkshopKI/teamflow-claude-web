@@ -12,7 +12,7 @@ import { ScheduleConfigPanel } from '@/components/workflow/ScheduleConfigPanel';
 import { EventTriggerConfigPanel } from '@/components/workflow/EventTriggerConfigPanel';
 import { TemplateBrowser } from '@/components/workflow/TemplateBrowser';
 import { downloadWorkflow, importWorkflowFromJSON } from '@teamflow/workflow-engine/src/import-export';
-import type { WorkflowNode, Workflow } from '@teamflow/types';
+import type { WorkflowNode } from '@teamflow/types';
 import type { EventTriggerConfig } from '@teamflow/workflow-engine/src/event-trigger';
 import type { WorkflowTemplate } from '@teamflow/workflow-engine/src/templates';
 
@@ -172,18 +172,17 @@ export default function WorkflowBuilderPage({ params }: { params: { id: string }
         });
 
         // Create new workflow from imported data
-        create({
+        const newWorkflow = create({
           name: `${importedWorkflow.name} (Imported)`,
           description: importedWorkflow.description,
-          status: 'draft',
+          createdBy: currentUser?.id || 'system',
+        });
+
+        // Update with imported nodes, edges, and variables
+        update(newWorkflow.id, {
           nodes: importedWorkflow.nodes,
           edges: importedWorkflow.edges,
           variables: importedWorkflow.variables,
-          settings: importedWorkflow.settings,
-          createdBy: currentUser?.id || 'system',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          executionCount: 0,
         });
 
         alert('Workflow imported successfully! Check your workflows list.');
@@ -433,7 +432,6 @@ export default function WorkflowBuilderPage({ params }: { params: { id: string }
                 </button>
               </div>
               <ScheduleConfigPanel
-                workflow={workflow}
                 schedule={scheduleConfig || undefined}
                 onScheduleChange={setScheduleConfig}
               />
@@ -452,7 +450,6 @@ export default function WorkflowBuilderPage({ params }: { params: { id: string }
                 </button>
               </div>
               <EventTriggerConfigPanel
-                workflow={workflow}
                 triggers={eventTriggers}
                 onTriggersChange={setEventTriggers}
               />

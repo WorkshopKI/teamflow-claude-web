@@ -8,6 +8,22 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./src/scheduler": {
+      "types": "./dist/scheduler.d.ts",
+      "default": "./dist/scheduler.js"
+    },
+    "./src/event-trigger": {
+      "types": "./dist/event-trigger.d.ts",
+      "default": "./dist/event-trigger.js"
+    },
+    "./src/templates": {
+      "types": "./dist/templates.d.ts",
+      "default": "./dist/templates.js"
+    },
+    "./src/import-export": {
+      "types": "./dist/import-export.d.ts",
+      "default": "./dist/import-export.js"
     }
   },
   "scripts": {

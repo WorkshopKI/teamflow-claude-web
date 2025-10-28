@@ -4,7 +4,7 @@
  * Pre-built workflow templates for common automation scenarios
  */
 
-import type { Workflow, WorkflowNode, WorkflowEdge } from '@teamflow/types';
+import type { WorkflowNode } from '@teamflow/types';
 
 export interface WorkflowTemplate {
   id: string;
@@ -14,7 +14,6 @@ export interface WorkflowTemplate {
   tags: string[];
   icon: string;
   nodes: Omit<WorkflowNode, 'id'>[];
-  edges: Omit<WorkflowEdge, 'id' | 'source' | 'target'>[];
   // Node references by index for edges
   edgeConnections: Array<{
     sourceIndex: number;

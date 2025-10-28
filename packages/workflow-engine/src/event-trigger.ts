@@ -4,7 +4,7 @@
  * Triggers workflows based on events from tasks, projects, and other entities
  */
 
-import type { Workflow, WorkflowId, Task, Project, PersonaId } from '@teamflow/types';
+import type { WorkflowId, Task, Project, PersonaId } from '@teamflow/types';
 
 export type EventType =
   | 'task.created'
