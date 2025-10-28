@@ -2,6 +2,9 @@ import type { Plugin } from '@teamflow/types';
 import { createSlackPlugin } from './examples/slack-plugin';
 import { createGitHubPlugin } from './examples/github-plugin';
 import { createDataTransformPlugin } from './examples/data-transform-plugin';
+import { createEmailPlugin } from './examples/email-plugin';
+import { createSpreadsheetPlugin } from './examples/spreadsheet-plugin';
+import { createCalendarPlugin } from './examples/calendar-plugin';
 
 /**
  * Plugin Registry
@@ -22,6 +25,9 @@ export class PluginRegistry {
     this.register('slack-integration', createSlackPlugin);
     this.register('github-integration', createGitHubPlugin);
     this.register('data-transform', createDataTransformPlugin);
+    this.register('email-integration', createEmailPlugin);
+    this.register('spreadsheet-csv', createSpreadsheetPlugin);
+    this.register('calendar-scheduling', createCalendarPlugin);
   }
 
   /**

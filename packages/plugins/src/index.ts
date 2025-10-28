@@ -23,3 +23,6 @@ export type { PluginMetadata } from './plugin-registry';
 export { createSlackPlugin } from './examples/slack-plugin';
 export { createGitHubPlugin } from './examples/github-plugin';
 export { createDataTransformPlugin } from './examples/data-transform-plugin';
+export { createEmailPlugin } from './examples/email-plugin';
+export { createSpreadsheetPlugin } from './examples/spreadsheet-plugin';
+export { createCalendarPlugin } from './examples/calendar-plugin';
