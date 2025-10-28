@@ -8,14 +8,35 @@ import { usePersonas } from '@/hooks/usePersonas';
 import { WorkflowCanvas } from '@/components/workflow/WorkflowCanvas';
 import { NodePalette } from '@/components/workflow/NodePalette';
 import { NodePropertiesPanel } from '@/components/workflow/NodePropertiesPanel';
-import type { WorkflowNode } from '@teamflow/types';
+import { ScheduleConfigPanel } from '@/components/workflow/ScheduleConfigPanel';
+import { EventTriggerConfigPanel } from '@/components/workflow/EventTriggerConfigPanel';
+import { TemplateBrowser } from '@/components/workflow/TemplateBrowser';
+import { downloadWorkflow, importWorkflowFromJSON } from '@teamflow/workflow-engine/src/import-export';
+import type { WorkflowNode, Workflow } from '@teamflow/types';
+import type { EventTriggerConfig } from '@teamflow/workflow-engine/src/event-trigger';
+import type { WorkflowTemplate } from '@teamflow/workflow-engine/src/templates';
+
+interface ScheduleConfig {
+  enabled: boolean;
+  pattern: string;
+  nextRun?: Date;
+}
+
+type RightPanelView = 'properties' | 'logs' | 'schedule' | 'events' | 'settings';
 
 export default function WorkflowBuilderPage({ params }: { params: { id: string } }) {
-  const { workflows, addNode, updateNode, removeNode, update, remove, incrementExecutionCount } = useWorkflows();
+  const { workflows, addNode, updateNode, removeNode, update, remove, incrementExecutionCount, create } = useWorkflows();
   const { execute, isExecuting, currentExecution, executionError, clearExecution } = useWorkflowExecution();
   const { personas } = usePersonas();
   const [selectedNode, setSelectedNode] = useState<WorkflowNode | null>(null);
   const [showExecutionLogs, setShowExecutionLogs] = useState(false);
+  const [rightPanelView, setRightPanelView] = useState<RightPanelView>('properties');
+  const [showTemplateBrowser, setShowTemplateBrowser] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+
+  // Workflow configuration state
+  const [scheduleConfig, setScheduleConfig] = useState<ScheduleConfig | null>(null);
+  const [eventTriggers, setEventTriggers] = useState<EventTriggerConfig[]>([]);
 
   const workflow = workflows.find((w) => w.id === params.id);
 
@@ -91,6 +112,89 @@ export default function WorkflowBuilderPage({ params }: { params: { id: string }
     }
   };
 
+  /**
+   * Handle template selection
+   */
+  const handleSelectTemplate = (template: WorkflowTemplate) => {
+    // Create nodes from template
+    const newNodes: WorkflowNode[] = template.nodes.map((nodeTemplate) => ({
+      id: `node_${Date.now()}_${Math.random()}`,
+      type: nodeTemplate.type,
+      position: nodeTemplate.position,
+      data: nodeTemplate.data,
+      inputs: nodeTemplate.inputs || [],
+      outputs: nodeTemplate.outputs || [],
+    }));
+
+    // Create edges from template connections
+    const newEdges = template.edgeConnections.map((conn, index) => ({
+      id: `edge_${Date.now()}_${index}`,
+      source: newNodes[conn.sourceIndex].id,
+      target: newNodes[conn.targetIndex].id,
+      sourcePort: conn.sourcePort || 'output',
+      targetPort: conn.targetPort || 'input',
+    }));
+
+    // Update workflow with template nodes and edges
+    update(workflow.id, {
+      nodes: newNodes,
+      edges: newEdges,
+      updatedAt: new Date(),
+    });
+
+    setShowTemplateBrowser(false);
+  };
+
+  /**
+   * Handle export workflow
+   */
+  const handleExport = () => {
+    downloadWorkflow(workflow);
+    setShowMenu(false);
+  };
+
+  /**
+   * Handle import workflow
+   */
+  const handleImport = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const importedWorkflow = importWorkflowFromJSON(text, currentUser?.id || 'system', {
+          regenerateIds: true,
+          validate: true,
+        });
+
+        // Create new workflow from imported data
+        create({
+          name: `${importedWorkflow.name} (Imported)`,
+          description: importedWorkflow.description,
+          status: 'draft',
+          nodes: importedWorkflow.nodes,
+          edges: importedWorkflow.edges,
+          variables: importedWorkflow.variables,
+          settings: importedWorkflow.settings,
+          createdBy: currentUser?.id || 'system',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          executionCount: 0,
+        });
+
+        alert('Workflow imported successfully! Check your workflows list.');
+      } catch (error) {
+        alert(`Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    };
+    input.click();
+    setShowMenu(false);
+  };
+
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
@@ -114,6 +218,71 @@ export default function WorkflowBuilderPage({ params }: { params: { id: string }
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Menu Button */}
+          <div className="relative">
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className="px-4 py-2 border border-border rounded-lg hover:bg-secondary transition-colors"
+              title="More actions"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+              </svg>
+            </button>
+
+            {showMenu && (
+              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
+                <div className="py-1">
+                  <button
+                    onClick={() => {
+                      setShowTemplateBrowser(true);
+                      setShowMenu(false);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                  >
+                    <span>📋</span>
+                    Use Template
+                  </button>
+                  <button
+                    onClick={() => {
+                      setRightPanelView('schedule');
+                      setShowMenu(false);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                  >
+                    <span>⏰</span>
+                    Configure Schedule
+                  </button>
+                  <button
+                    onClick={() => {
+                      setRightPanelView('events');
+                      setShowMenu(false);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                  >
+                    <span>⚡</span>
+                    Event Triggers
+                  </button>
+                  <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                  <button
+                    onClick={handleExport}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                  >
+                    <span>📥</span>
+                    Export Workflow
+                  </button>
+                  <button
+                    onClick={handleImport}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                  >
+                    <span>📤</span>
+                    Import Workflow
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Status Actions */}
           <select
             value={workflow.status}
@@ -176,7 +345,7 @@ export default function WorkflowBuilderPage({ params }: { params: { id: string }
           />
         </div>
 
-        {/* Right Sidebar - Properties or Execution Logs */}
+        {/* Right Sidebar - Dynamic Panel */}
         <div className="w-80 border-l border-border bg-card overflow-y-auto shrink-0">
           {showExecutionLogs && currentExecution ? (
             <div className="p-4 space-y-4">
@@ -186,6 +355,7 @@ export default function WorkflowBuilderPage({ params }: { params: { id: string }
                   onClick={() => {
                     setShowExecutionLogs(false);
                     clearExecution();
+                    setRightPanelView('properties');
                   }}
                   className="p-1 hover:bg-secondary rounded transition-colors"
                 >
@@ -249,6 +419,44 @@ export default function WorkflowBuilderPage({ params }: { params: { id: string }
                 </div>
               </div>
             </div>
+          ) : rightPanelView === 'schedule' ? (
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Schedule Configuration</h3>
+                <button
+                  onClick={() => setRightPanelView('properties')}
+                  className="p-1 hover:bg-secondary rounded transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <ScheduleConfigPanel
+                workflow={workflow}
+                schedule={scheduleConfig || undefined}
+                onScheduleChange={setScheduleConfig}
+              />
+            </div>
+          ) : rightPanelView === 'events' ? (
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Event Triggers</h3>
+                <button
+                  onClick={() => setRightPanelView('properties')}
+                  className="p-1 hover:bg-secondary rounded transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <EventTriggerConfigPanel
+                workflow={workflow}
+                triggers={eventTriggers}
+                onTriggersChange={setEventTriggers}
+              />
+            </div>
           ) : selectedNode ? (
             <NodePropertiesPanel
               node={selectedNode}
@@ -267,7 +475,7 @@ export default function WorkflowBuilderPage({ params }: { params: { id: string }
             <div className="p-4 flex items-center justify-center h-full text-center text-muted-foreground">
               <div>
                 <p>Select a node to edit its properties</p>
-                <p className="text-sm mt-2">or click Run to execute the workflow</p>
+                <p className="text-sm mt-2">or use the menu to configure workflow settings</p>
               </div>
             </div>
           )}
@@ -280,11 +488,29 @@ export default function WorkflowBuilderPage({ params }: { params: { id: string }
           <span>{workflow.nodes.length} nodes</span>
           <span>{workflow.edges.length} connections</span>
           <span>{workflow.executionCount} total runs</span>
+          {scheduleConfig?.enabled && (
+            <span className="text-blue-600 dark:text-blue-400">
+              ⏰ Scheduled
+            </span>
+          )}
+          {eventTriggers.length > 0 && (
+            <span className="text-purple-600 dark:text-purple-400">
+              ⚡ {eventTriggers.length} trigger{eventTriggers.length > 1 ? 's' : ''}
+            </span>
+          )}
         </div>
         <div className="text-sm text-muted-foreground">
           Last updated: {new Date(workflow.updatedAt).toLocaleString()}
         </div>
       </div>
+
+      {/* Template Browser Modal */}
+      {showTemplateBrowser && (
+        <TemplateBrowser
+          onSelectTemplate={handleSelectTemplate}
+          onClose={() => setShowTemplateBrowser(false)}
+        />
+      )}
     </div>
   );
 }
