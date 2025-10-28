@@ -23,6 +23,7 @@ export interface WorkflowExecutionOptions {
     createTask?: (taskData: any) => any;
     executeAgent?: (agentData: any) => Promise<any>;
     webhook?: (url: string, options: any) => Promise<any>;
+    pluginManager?: any; // Plugin manager for custom nodes
   };
 }
 
@@ -113,7 +114,12 @@ export class WorkflowExecutor {
           result = await this.executeWebhookNode(node);
           break;
         default:
-          throw new Error(`Unknown node type: ${node.type}`);
+          // Check if it's a custom plugin node
+          if (this.context?.pluginManager?.isCustomNode(node.type)) {
+            result = await this.executePluginNode(node);
+          } else {
+            throw new Error(`Unknown node type: ${node.type}`);
+          }
       }
 
       // Store result
@@ -333,6 +339,30 @@ export class WorkflowExecutor {
       statusText: response.statusText,
       data,
     };
+  }
+
+  /**
+   * Execute plugin (custom) node
+   */
+  private async executePluginNode(node: WorkflowNode): Promise<any> {
+    if (!this.context?.pluginManager) {
+      throw new Error('Plugin manager not available in execution context');
+    }
+
+    // Prepare execution context for plugin
+    const pluginContext = {
+      nodeId: node.id,
+      inputs: {}, // Input values from connected nodes
+      config: node.data || {},
+      variables: this.execution.context.variables,
+    };
+
+    // Execute the plugin node
+    const result = await this.context.pluginManager.executeNode(node.type, pluginContext);
+
+    this.log('info', node.id, `Plugin node executed: ${node.type}`, { result });
+
+    return result;
   }
 
   /**
