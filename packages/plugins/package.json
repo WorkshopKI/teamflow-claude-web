@@ -2,16 +2,22 @@
   "name": "@teamflow/plugins",
   "version": "0.1.0",
   "description": "TeamFlow AI plugin system - extensibility and custom nodes",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@teamflow/types": "workspace:*",
-    "@teamflow/core": "workspace:*"
+    "@teamflow/types": "*",
+    "@teamflow/core": "*"
   },
   "devDependencies": {
     "typescript": "^5.3.3"

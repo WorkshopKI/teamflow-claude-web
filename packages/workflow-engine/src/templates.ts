@@ -4,7 +4,7 @@
  * Pre-built workflow templates for common automation scenarios
  */
 
-import type { Workflow, WorkflowNode, WorkflowEdge } from '@teamflow/types';
+import type { WorkflowNode } from '@teamflow/types';
 
 export interface WorkflowTemplate {
   id: string;

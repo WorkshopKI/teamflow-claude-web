@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import type { Workflow } from '@teamflow/types';
 import {
   EventType,
   EventTriggerConfig,
@@ -10,13 +9,11 @@ import {
 } from '@teamflow/workflow-engine/src/event-trigger';
 
 interface EventTriggerConfigPanelProps {
-  workflow: Workflow;
   triggers: EventTriggerConfig[];
   onTriggersChange: (triggers: EventTriggerConfig[]) => void;
 }
 
 export function EventTriggerConfigPanel({
-  workflow,
   triggers,
   onTriggersChange,
 }: EventTriggerConfigPanelProps) {
@@ -191,8 +188,8 @@ function TriggerEditor({
   const [enabled, setEnabled] = useState(trigger?.enabled !== false);
   const [statusFilter, setStatusFilter] = useState<string[]>(trigger?.filters?.status || []);
   const [priorityFilter, setPriorityFilter] = useState<string[]>(trigger?.filters?.priority || []);
-  const [assigneeFilter, setAssigneeFilter] = useState(trigger?.filters?.assignee || '');
-  const [projectFilter, setProjectFilter] = useState(trigger?.filters?.project || '');
+  const [assigneeFilter, _setAssigneeFilter] = useState<string[]>(trigger?.filters?.assignee || []);
+  const [projectFilter, _setProjectFilter] = useState<string[]>(trigger?.filters?.project || []);
   const [tagsFilter, setTagsFilter] = useState<string[]>(trigger?.filters?.tags || []);
   const [tagInput, setTagInput] = useState('');
 
@@ -203,8 +200,8 @@ function TriggerEditor({
 
     if (statusFilter.length > 0) filters.status = statusFilter;
     if (priorityFilter.length > 0) filters.priority = priorityFilter;
-    if (assigneeFilter) filters.assignee = assigneeFilter;
-    if (projectFilter) filters.project = projectFilter;
+    if (assigneeFilter.length > 0) filters.assignee = assigneeFilter;
+    if (projectFilter.length > 0) filters.project = projectFilter;
     if (tagsFilter.length > 0) filters.tags = tagsFilter;
 
     onSave({

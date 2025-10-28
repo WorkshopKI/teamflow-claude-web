@@ -87,7 +87,7 @@ export class WorkflowImportExport {
           targetPort: edge.targetPort,
         })),
         variables: workflow.variables ? { ...workflow.variables } : undefined,
-        settings: workflow.settings ? { ...workflow.settings } : undefined,
+        settings: undefined,
       },
     };
   }
@@ -169,17 +169,19 @@ export class WorkflowImportExport {
     const workflow: Workflow = {
       id: nanoid() as WorkflowId,
       name: nameOverride || exported.workflow.name,
-      description: descriptionOverride || exported.workflow.description,
+      description: descriptionOverride || exported.workflow.description || '',
+      version: '1.0.0',
       status: 'draft', // Always import as draft for safety
       nodes,
       edges,
       variables: exported.workflow.variables ? { ...exported.workflow.variables } : {},
-      settings: exported.workflow.settings ? { ...exported.workflow.settings } : {},
+      triggers: [],
       createdBy: creatorId,
       createdAt: new Date(),
       updatedAt: new Date(),
+      tags: [],
       executionCount: 0,
-      lastExecutedAt: undefined,
+      lastExecutedAt: null,
     };
 
     return workflow;

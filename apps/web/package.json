@@ -16,6 +16,7 @@
     "@teamflow/ai-agents": "*",
     "@teamflow/core": "*",
     "@teamflow/database": "*",
+    "@teamflow/plugins": "*",
     "@teamflow/types": "*",
     "@teamflow/ui": "*",
     "@teamflow/workflow-engine": "*",

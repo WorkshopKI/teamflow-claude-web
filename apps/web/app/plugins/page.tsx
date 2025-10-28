@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getPluginManager, getPluginRegistry, discoverPlugins, installPluginFromRegistry } from '@teamflow/plugins';
+import { getPluginManager, installPluginFromRegistry } from '@teamflow/plugins';
 import type { Plugin } from '@teamflow/types';
-import type { PluginMetadata } from '@teamflow/plugins';
 import { PluginCard } from '@/components/plugins/PluginCard';
 import { PluginDiscoveryModal } from '@/components/plugins/PluginDiscoveryModal';
 import { PluginSettingsModal } from '@/components/plugins/PluginSettingsModal';
