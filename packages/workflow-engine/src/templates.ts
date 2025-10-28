@@ -14,7 +14,6 @@ export interface WorkflowTemplate {
   tags: string[];
   icon: string;
   nodes: Omit<WorkflowNode, 'id'>[];
-  edges: Omit<WorkflowEdge, 'id' | 'source' | 'target'>[];
   // Node references by index for edges
   edgeConnections: Array<{
     sourceIndex: number;

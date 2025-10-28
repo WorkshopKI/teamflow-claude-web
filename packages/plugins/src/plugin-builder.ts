@@ -4,7 +4,6 @@ import type {
   Tool,
   PluginHooks,
   PluginSettings,
-  WorkflowNodePort,
   NodeExecutionContext,
   ToolParameter,
   ToolPermissions,

@@ -67,6 +67,7 @@ export function createSlackPlugin(): Plugin {
             // In a real implementation, this would call the Slack API
             // For now, we'll simulate it
             console.log(`[Slack Plugin] Sending message to ${channel}:`, resolvedMessage);
+            console.log(`[Slack Plugin] Using bot: ${username || 'TeamFlow Bot'} with icon ${icon_emoji || ':robot_face:'}`);
 
             // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -75,6 +76,8 @@ export function createSlackPlugin(): Plugin {
               success: true,
               channel,
               message: resolvedMessage,
+              username: username || 'TeamFlow Bot',
+              icon_emoji: icon_emoji || ':robot_face:',
               timestamp: new Date().toISOString(),
             };
           } catch (error) {
